@@ -1,12 +1,26 @@
 package negocios;
 
+import java.util.ArrayList;
+
 public class Cliente {
     private int dni;
     private String nombre;
     private String apellido;
-    private CajaCorriente cajaCorriente;
-    private CajaAhorro cajaAhorro;
-    private float balance;
+    private ArrayList<Cuenta> tarjetas;
+
+
+    public Cliente(int dni, String nombre, String apellido) {
+        this.dni = dni;
+        this.nombre = nombre;
+        this.apellido = apellido;
+        this.tarjetas = new ArrayList<Cuenta>();
+    }
+    public Cliente(){
+        this.tarjetas = new ArrayList<Cuenta>();
+        this.apellido="";
+        this.nombre="";
+        this.dni=0;
+    }
 
     public int getDni() {
         return dni;
@@ -32,27 +46,11 @@ public class Cliente {
         this.apellido = apellido;
     }
 
-    public CajaCorriente getCajaCorriente() {
-        return cajaCorriente;
+    public ArrayList<Cuenta> getTarjetas() {
+        return tarjetas;
     }
 
-    public void setCajaCorriente(CajaCorriente cajaCorriente) {
-        this.cajaCorriente = cajaCorriente;
-    }
-
-    public CajaAhorro getCajaAhorro() {
-        return cajaAhorro;
-    }
-
-    public void setCajaAhorro(CajaAhorro cajaAhorro) {
-        this.cajaAhorro = cajaAhorro;
-    }
-
-    public float getBalance() {
-        return balance;
-    }
-
-    public void setBalance(float balance) {
-        this.balance = balance;
+    public void setTarjetas(ArrayList<Cuenta> tarjetas) {
+        this.tarjetas = tarjetas;
     }
 }

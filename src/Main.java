@@ -1,10 +1,11 @@
+
 import negocios.*;
+
 import java.util.Scanner;
 
 public class Main {
-    static Banco banco = new Banco();
     public static void main(String[] args) {
-
+        Banco banco = new Banco();
         Scanner scanner = new Scanner(System.in);
         boolean salir = false;
 
@@ -19,7 +20,7 @@ public class Main {
             System.out.print("Seleccione una opción: ");
 
             int opcion = scanner.nextInt();
-            scanner.nextLine();
+            scanner.nextLine(); // Consume newline
 
             switch (opcion) {
                 case 1:
@@ -49,17 +50,17 @@ public class Main {
     }
 
     private static void agregarCliente(Banco banco, Scanner scanner) {
-        Cliente cliente = new Cliente();
-
         System.out.print("Ingrese DNI: ");
-        cliente.setDni(scanner.nextInt());
+        int dni = scanner.nextInt();
         scanner.nextLine(); // Consume newline
 
         System.out.print("Ingrese Nombre: ");
-        cliente.setNombre(scanner.nextLine());
+        String nombre = scanner.nextLine();
 
         System.out.print("Ingrese Apellido: ");
-        cliente.setApellido(scanner.nextLine());
+        String apellido = scanner.nextLine();
+
+        Cliente cliente = new Cliente(dni, nombre, apellido);
 
         // Crear caja de ahorro
         System.out.print("Saldo inicial caja de ahorro: ");
@@ -67,8 +68,8 @@ public class Main {
         System.out.print("Número de cuenta caja de ahorro: ");
         int numeroCuentaAhorro = scanner.nextInt();
 
-        CajaAhorro cajaAhorro = new CajaAhorro(saldoAhorro, numeroCuentaAhorro);
-        cliente.setCajaAhorro(cajaAhorro);
+        CajaAhorro cajaAhorro = new CajaAhorro(saldoAhorro, numeroCuentaAhorro, cliente, null);
+        cliente.getTarjetas().add(cajaAhorro);
 
         // Crear caja corriente
         System.out.print("Saldo inicial caja corriente: ");
@@ -77,27 +78,35 @@ public class Main {
         int numeroCuentaCorriente = scanner.nextInt();
         System.out.print("Descubierto permitido: ");
         double descubierto = scanner.nextDouble();
-        CajaCorriente cajaCorriente = new CajaCorriente(descubierto, numeroCuentaCorriente, saldoCorriente);
-        cliente.setCajaCorriente(cajaCorriente);
 
+        CajaCorriente cajaCorriente = new CajaCorriente(saldoCorriente, numeroCuentaCorriente, cliente, descubierto);
+        cliente.getTarjetas().add(cajaCorriente);
 
-        System.out.print("Saldo inicial de tarjeta de débito: ");
-        double saldoDebito = scanner.nextDouble();
-        System.out.print("Número de tarjeta de débito: ");
-        int numeroDebito = scanner.nextInt();
-        TarjetaDebito tarjetaDebito = new TarjetaDebito(saldoDebito, numeroDebito);
-        cliente.getCajaAhorro().setTarjetaDebito(tarjetaDebito);
+        // Tarjeta de débito
+        System.out.print("¿Crear tarjeta de débito? (1: Sí / 0: No): ");
+        if (scanner.nextInt() == 1) {
+            System.out.print("Saldo inicial: ");
+            double saldoDebito = scanner.nextDouble();
+            System.out.print("Número de tarjeta: ");
+            int numeroDebito = scanner.nextInt();
 
+            TarjetaDebito tarjetaDebito = new TarjetaDebito(saldoDebito, numeroDebito, cliente);
+            cajaAhorro.getTarjetas().add(tarjetaDebito);
+        }
 
-        System.out.print("Límite de tarjeta de crédito: ");
-        double limiteCredito = scanner.nextDouble();
-        System.out.print("Saldo inicial de tarjeta de crédito: ");
-        double saldoCredito = scanner.nextDouble();
-        System.out.print("Número de tarjeta de crédito: ");
-        int numeroCredito = scanner.nextInt();
-        TarjetaCredito tarjetaCredito = new TarjetaCredito(limiteCredito, saldoCredito, numeroCredito);
-        cliente.getCajaAhorro().setTarjetaCredito(tarjetaCredito);
+        // Tarjeta de crédito
+        System.out.print("¿Crear tarjeta de crédito? (1: Sí / 0: No): ");
+        if (scanner.nextInt() == 1) {
+            System.out.print("Saldo inicial: ");
+            double saldoCredito = scanner.nextDouble();
+            System.out.print("Número de tarjeta: ");
+            int numeroCredito = scanner.nextInt();
+            System.out.print("Límite de crédito: ");
+            double limiteCredito = scanner.nextDouble();
 
+            TarjetaCredito tarjetaCredito = new TarjetaCredito(saldoCredito, numeroCredito, cliente, limiteCredito);
+            cajaAhorro.getTarjetas().add(tarjetaCredito);
+        }
 
         banco.agregarCliente(cliente);
         System.out.println("Cliente agregado exitosamente!");
@@ -122,22 +131,22 @@ public class Main {
         Cliente cliente = banco.getCliente(dni);
 
         if (cliente != null) {
-            System.out.println("1. Depositar en Caja de Ahorro");
-            System.out.println("2. Depositar en Caja Corriente");
-            System.out.print("Seleccione una opción: ");
-            int opcion = scanner.nextInt();
+            System.out.println("Cuentas disponibles:");
+            mostrarCuentas(cliente);
 
-            System.out.print("Ingrese monto a depositar: ");
-            double monto = scanner.nextDouble();
+            System.out.print("Seleccione número de cuenta: ");
+            int numeroCuenta = scanner.nextInt();
 
-            if (opcion == 1 && cliente.getCajaAhorro() != null) {
-                cliente.getCajaAhorro().setSaldo(cliente.getCajaAhorro().getSaldo() + monto);
-                System.out.println("Depósito realizado exitosamente en Caja de Ahorro!");
-            } else if (opcion == 2 && cliente.getCajaCorriente() != null) {
-                cliente.getCajaCorriente().depositarDinero(monto);
-                System.out.println("Depósito realizado exitosamente en Caja Corriente!");
+            Cuenta cuentaSeleccionada = buscarCuentaPorNumero(cliente, numeroCuenta);
+
+            if (cuentaSeleccionada != null) {
+                System.out.print("Ingrese monto a depositar: ");
+                double monto = scanner.nextDouble();
+
+                cuentaSeleccionada.depositar(monto);
+                System.out.println("Depósito realizado exitosamente!");
             } else {
-                System.out.println("Opción inválida o cuenta no disponible.");
+                System.out.println("Cuenta no encontrada.");
             }
         } else {
             System.out.println("Cliente no encontrado.");
@@ -150,59 +159,22 @@ public class Main {
         Cliente cliente = banco.getCliente(dni);
 
         if (cliente != null) {
-            System.out.println("1. Extraer de Caja de Ahorro");
-            System.out.println("2. Extraer de Caja Corriente");
-            System.out.println("3. Extraer con Tarjeta de Débito");
-            System.out.println("4. Extraer con Tarjeta de Crédito");
-            System.out.print("Seleccione una opción: ");
-            int opcion = scanner.nextInt();
+            System.out.println("Cuentas disponibles:");
+            mostrarCuentas(cliente);
 
-            System.out.print("Ingrese monto a extraer: ");
-            double monto = scanner.nextDouble();
+            System.out.print("Seleccione número de cuenta: ");
+            int numeroCuenta = scanner.nextInt();
 
-            switch (opcion) {
-                case 1:
-                    if (cliente.getCajaAhorro() != null) {
-                        if (monto <= cliente.getCajaAhorro().getSaldo()) {
-                            cliente.getCajaAhorro().setSaldo(cliente.getCajaAhorro().getSaldo() - monto);
-                            System.out.println("Extracción realizada exitosamente de Caja de Ahorro!");
-                        } else {
-                            System.out.println("Saldo insuficiente.");
-                        }
-                    } else {
-                        System.out.println("Caja de Ahorro no disponible.");
-                    }
-                    break;
+            Cuenta cuentaSeleccionada = buscarCuentaPorNumero(cliente, numeroCuenta);
 
-                case 2:
-                    if (cliente.getCajaCorriente() != null) {
-                        cliente.getCajaCorriente().extraerDinero(monto);
-                        System.out.println("Extracción procesada de Caja Corriente.");
-                    } else {
-                        System.out.println("Caja Corriente no disponible.");
-                    }
-                    break;
+            if (cuentaSeleccionada != null) {
+                System.out.print("Ingrese monto a extraer: ");
+                double monto = scanner.nextDouble();
 
-                case 3:
-                    if (cliente.getCajaAhorro() != null && cliente.getCajaAhorro().getTarjetaDebito() != null) {
-                        cliente.getCajaAhorro().getTarjetaDebito().extraer(monto);
-                        System.out.println("Extracción con Tarjeta de Débito procesada.");
-                    } else {
-                        System.out.println("Tarjeta de Débito no disponible.");
-                    }
-                    break;
-
-                case 4:
-                    if (cliente.getCajaAhorro() != null && cliente.getCajaAhorro().getTarjetaCredito() != null) {
-                        cliente.getCajaAhorro().getTarjetaCredito().extraer(monto);
-                        System.out.println("Extracción con Tarjeta de Crédito procesada.");
-                    } else {
-                        System.out.println("Tarjeta de Crédito no disponible.");
-                    }
-                    break;
-
-                default:
-                    System.out.println("Opción inválida.");
+                cuentaSeleccionada.extraer(monto);
+                System.out.println("Operación procesada.");
+            } else {
+                System.out.println("Cuenta no encontrada.");
             }
         } else {
             System.out.println("Cliente no encontrado.");
@@ -219,35 +191,56 @@ public class Main {
             System.out.println("Nombre: " + cliente.getNombre() + " " + cliente.getApellido());
             System.out.println("DNI: " + cliente.getDni());
 
-            if (cliente.getCajaAhorro() != null) {
-                System.out.println("\nCAJA DE AHORRO");
-                System.out.println("Número de cuenta: " + cliente.getCajaAhorro().getNumeroCuenta());
-                System.out.println("Saldo: $" + cliente.getCajaAhorro().getSaldo());
+            for (Cuenta cuenta : cliente.getTarjetas()) {
+                if (cuenta instanceof CajaAhorro) {
+                    CajaAhorro cajaAhorro = (CajaAhorro) cuenta;
+                    System.out.println("\nCAJA DE AHORRO");
+                    System.out.println("Número de cuenta: " + cajaAhorro.getNumero());
+                    System.out.println("Saldo: $" + cajaAhorro.getBalance());
 
-                if (cliente.getCajaAhorro().getTarjetaDebito() != null) {
-                    System.out.println("\nTARJETA DE DÉBITO");
-                    System.out.println("Número: " + cliente.getCajaAhorro().getTarjetaDebito().getNumeroTarjeta());
-                    System.out.println("Saldo: $" + cliente.getCajaAhorro().getTarjetaDebito().getSaldo());
-                }
-
-                if (cliente.getCajaAhorro().getTarjetaCredito() != null) {
-                    System.out.println("\nTARJETA DE CRÉDITO");
-                    System.out.println("Número: " + cliente.getCajaAhorro().getTarjetaCredito().getNumeroTarjeta());
-                    System.out.println("Saldo: $" + cliente.getCajaAhorro().getTarjetaCredito().getSaldo());
-                    System.out.println("Límite: $" + cliente.getCajaAhorro().getTarjetaCredito().getLimite());
+                    // Mostrar tarjetas asociadas
+                    if (cajaAhorro.getTarjetas() != null && !cajaAhorro.getTarjetas().isEmpty()) {
+                        for (Tarjeta tarjeta : cajaAhorro.getTarjetas()) {
+                            if (tarjeta instanceof TarjetaDebito) {
+                                System.out.println("\nTARJETA DE DÉBITO");
+                                System.out.println("Número: " + tarjeta.getNumero());
+                                System.out.println("Saldo: $" + tarjeta.getBalance());
+                            } else if (tarjeta instanceof TarjetaCredito) {
+                                TarjetaCredito tarjetaCredito = (TarjetaCredito) tarjeta;
+                                System.out.println("\nTARJETA DE CRÉDITO");
+                                System.out.println("Número: " + tarjetaCredito.getNumero());
+                                System.out.println("Saldo: $" + tarjetaCredito.getBalance());
+                                System.out.println("Límite: $" + tarjetaCredito.getLimite());
+                            }
+                        }
+                    }
+                } else if (cuenta instanceof CajaCorriente) {
+                    CajaCorriente cajaCorriente = (CajaCorriente) cuenta;
+                    System.out.println("\nCAJA CORRIENTE");
+                    System.out.println("Número de cuenta: " + cajaCorriente.getNumero());
+                    System.out.println("Saldo: $" + cajaCorriente.getBalance());
+                    System.out.println("Descubierto permitido: $" + cajaCorriente.getDescubierto());
                 }
             }
-
-            if (cliente.getCajaCorriente() != null) {
-                System.out.println("\nCAJA CORRIENTE");
-                System.out.println("Número de cuenta: " + cliente.getCajaCorriente().getNumeroCuenta());
-                System.out.println("Saldo: $" + cliente.getCajaCorriente().getSaldo());
-                System.out.println("Descubierto permitido: $" + cliente.getCajaCorriente().getDescubierto());
-                System.out.println("Balance total: $" + cliente.getCajaCorriente().verBalance());
-            }
-
         } else {
             System.out.println("Cliente no encontrado.");
         }
+    }
+
+    // Métodos de utilidad
+    private static void mostrarCuentas(Cliente cliente) {
+        for (Cuenta cuenta : cliente.getTarjetas()) {
+            String tipoCuenta = (cuenta instanceof CajaAhorro) ? "Caja de Ahorro" : "Caja Corriente";
+            System.out.println(cuenta.getNumero() + " - " + tipoCuenta + " - Saldo: $" + cuenta.getBalance());
+        }
+    }
+
+    private static Cuenta buscarCuentaPorNumero(Cliente cliente, int numeroCuenta) {
+        for (Cuenta cuenta : cliente.getTarjetas()) {
+            if (cuenta.getNumero() == numeroCuenta) {
+                return cuenta;
+            }
+        }
+        return null;
     }
 }
